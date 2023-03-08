@@ -20,7 +20,13 @@ class DemoMain(QMainWindow, Ui_MainWindow):
     def __init__(self):
         # 初始化父类
         super(DemoMain, self).__init__()
-        self.getResponseTask = GetResponseTask()
+        #
+        self.bot = []
+        self.requests_ = []
+        self.requests_.append({"role": system, "content": systemPromt})
+        #
+        self.click_t = 0
+        self.response_t = 0
         # 调用Ui_Form的setupUi()方法构建页面
         self.setupUi(self)
     #     self.bot_text.setHtml("""<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/vs2015.min.css">
@@ -29,24 +35,7 @@ class DemoMain(QMainWindow, Ui_MainWindow):
         self.bind_logits()
 
     def bind_logits(self):
-        self.send_btn.clicked.connect(self.getResponseTask.run)
-
-
-class GetResponseTask(QThread):  # 创建线程类
-    def __init__(self):
-        super(GetResponseTask, self).__init__()
-
-        #
-        self.bot = []
-        self.requests_ = []
-        self.requests_.append({"role": system, "content": systemPromt})
-        #
-        self.click_t = 0
-        self.response_t = 0
-        #
-
-    def run(self):  # 重写run()方法
-        self.getAnswer()
+        self.send_btn.clicked.connect(self.getAnswer)
 
     def getResponse(self):
         response = openai.ChatCompletion.create(
@@ -93,6 +82,8 @@ class GetResponseTask(QThread):  # 创建线程类
         text = markdown.markdown(text, extensions=['fenced_code', 'codehilite'])
         print(text)
         self.bot_text.setText(text)
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
