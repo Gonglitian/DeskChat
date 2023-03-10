@@ -65,67 +65,36 @@ class DemoMain(QMainWindow, Ui_MainWindow):
         self.user_text.clear()
         self.threadList.append(requestTask)
 
-        requestTask.renderUserSignal.connect(self.renderUser)
-        requestTask.renderDivSignal.connect(self.renderDiv)
-        requestTask.renderBotSignal.connect(self.renderBot)
+        requestTask.renderSignal.connect(self.render)
         requestTask.finishSignal.connect(self.finishRequestTask)
         requestTask.stateUpdateSignal.connect(self.updataStatus)
         requestTask.start()
 
     def finishRequestTask(self):
         self.send_btn.setEnabled(True)
-        self.bot_text.moveCursor(QtGui.QTextCursor.End)
-        print(self.bot_text.toHtml())
+        # print(self.bot_text.toHtml())
+
     def shutRequestTask(self):
         self.updataStatus("中止生成回答")
         bot.pop()
         for thread in self.threadList:
             thread.finishSignal.emit()
-            thread.terminate()
 
-    def renderUser(self, content: str):
-        markedContent = markdown.markdown(
-            content, extensions=["fenced_code", "codehilite"]
-        )
-        print(markedContent)
-        html = f'<div class="user" style="margin-left: auto;">{markedContent}</div>'
-        # 插入HTML代码到文本框中
-        # self.bot_text.append(html)
-        # self.bot_text.moveCursor(QtGui.QTextCursor.End)  # 将光标移动到文本末尾
-        self.bot_text.append(html)
-
-    def renderDiv(self):
-        html = f'<div class="robot"></div>'
-        self.bot_text.append(html)
+    def render(self):
+        self.bot_text.clear()
+        html = ""
+        for chat in bot:
+            # print(chat[1])
+            markedContent = markdown.markdown(
+                chat[1], extensions=["fenced_code", "codehilite"]
+            )
+            html += (
+                f'<div class="user" style="margin-left: auto;">{markedContent}</div>'
+            )
+        self.bot_text.setHtml(html)
         self.bot_text.moveCursor(QtGui.QTextCursor.End)
-        cursor = self.bot_text.textCursor()
-        cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 6)
-
-    def renderBot(self, delta: str):
-        self.unrenderStr += delta
-        self.rerenderCount += 1
-        if self.rerenderCount % 10 == 0:
-            self.rerender()
-        # print(markedContent)
-        self.bot_text.insertHtml(delta)
-
-    def rerender(self):
-        self.unrenderLength = len(self.unrenderStr)
-        cursor = self.bot_text.textCursor()
-
-        markedContent = markdown.markdown(
-            self.unrenderStr, extensions=["fenced_code", "codehilite"]
-        )
-        unrenderStr = ""
-        self.curRenderLength += len(markedContent)
-        cursor.movePosition(
-            QTextCursor.Left,
-            QTextCursor.KeepAnchor,
-            self.curRenderLength + self.unrenderLength,
-        )
-        cursor.deleteChar()
-        self.bot_text.insertHtml(markedContent)
-
+        print(self.bot_text.toHtml())#python 线性回归
+        
     def updataStatus(self, message: str):
         self.statusBar().showMessage(message)
 
@@ -154,9 +123,7 @@ class DemoMain(QMainWindow, Ui_MainWindow):
 
 
 class RequestTask(QThread):
-    renderUserSignal = pyqtSignal(str)
-    renderBotSignal = pyqtSignal(str)
-    renderDivSignal = pyqtSignal()
+    renderSignal = pyqtSignal()
     finishSignal = pyqtSignal()
     stateUpdateSignal = pyqtSignal(str)
 
@@ -166,9 +133,8 @@ class RequestTask(QThread):
 
     def run(self):
         bot.append([userFlag, self.inputSentence])
-        self.renderUserSignal.emit(self.inputSentence)
         bot_format.append({"role": "user", "content": self.inputSentence})
-        print(bot_format)
+        self.renderSignal.emit()
         payload = {
             "model": "gpt-3.5-turbo",
             "messages": bot_format,  # [{"role": "user", "content": f"{inputs}"}],
@@ -180,36 +146,34 @@ class RequestTask(QThread):
             "frequency_penalty": 0,
         }
         partialWords = ""
-
         # try:
         response = requests.post(API_URL, headers=headers, json=payload, stream=True)
-        self.renderDivSignal.emit()
         # print(1)
         bot.append([botFlag, partialWords])
+        bot_format.append({"role": "assistant", "content": partialWords})
         for chunk in response.iter_lines():
-            # print(chunk.decode())
-            # # print(len(json.loads(chunk.decode())))
             # check whether each line is non-empty
             if chunk:
-                # decode each line as response data is in bytes
+                #     # decode each line as response data is in bytes
                 try:
                     data = json.loads(chunk.decode()[6:])
-                    if len(data["choices"][0]["delta"]) == 0:
-                        # print(3)
+                    delta = data["choices"][0]["delta"]
+                    if len(delta) == 0:
+                        #             # print(3)
                         break
                 except Exception as e:
+                    traceback.print_exc()
+                    # print(e)
                     break
-                data = json.loads(chunk.decode()[6:])
-                delta = data["choices"][0]["delta"]
+
                 # print(data)
                 status_text = f"id: {data['id']}, finish_reason: {data['choices'][0]['finish_reason']}"
                 partial = delta["content"] if "content" in delta else ""
-                partialWords += partial
                 # print(data["choices"][0]["delta"])
-                print(partial)
-                # print(partialWords)
-                bot[-1][1] = partialWords
-                self.renderBotSignal.emit(partial)
+                # print(partial)
+                bot[-1][1] += partial
+                bot_format[-1]["content"] += partial
+                self.renderSignal.emit()
         # except openai.error.AuthenticationError:
         #     bot.pop()
         #     bot_format.pop()
@@ -236,7 +200,7 @@ class RequestTask(QThread):
         #     self.stateUpdateSignal.emit("未知错误。")
         #     print("未知错误。")
 
-        bot.append(partialWords)
+        # bot.append(partialWords)
         self.finishSignal.emit()
 
     def getPartialContent(self):
