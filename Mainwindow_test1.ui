@@ -52,10 +52,10 @@
     <widget class="QFrame" name="user_input">
      <property name="geometry">
       <rect>
-       <x>7</x>
-       <y>343</y>
-       <width>581</width>
-       <height>101</height>
+       <x>0</x>
+       <y>220</y>
+       <width>588</width>
+       <height>224</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -69,8 +69,8 @@
        <widget class="QTextEdit" name="user_text">
         <property name="minimumSize">
          <size>
-          <width>0</width>
-          <height>0</height>
+          <width>440</width>
+          <height>200</height>
          </size>
         </property>
        </widget>
@@ -88,9 +88,23 @@
           <widget class="QPushButton" name="send_btn">
            <property name="minimumSize">
             <size>
-             <width>0</width>
-             <height>0</height>
+             <width>93</width>
+             <height>61</height>
             </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton
+{
+  color: rgb(255, 255, 255);
+  background-color: rgba(165, 205, 255,125);
+  border:1px outset rgb(255, 255, 255);
+  border-radius:8px;
+
+}
+QPushButton:hover {
+  background-color: rgba(165, 205, 255,80%);
+  border:2px outset rgba(36, 36, 36,0);
+}</string>
            </property>
            <property name="text">
             <string>发送</string>
@@ -101,14 +115,8 @@
           <widget class="QPushButton" name="shut_btn">
            <property name="minimumSize">
             <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>16777215</height>
+             <width>93</width>
+             <height>61</height>
             </size>
            </property>
            <property name="text">
@@ -138,7 +146,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QPushButton" name="newChat_btn">
+       <widget class="QPushButton" name="newchat_btn">
         <property name="text">
          <string>新的对话</string>
         </property>
@@ -152,7 +160,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="deleteLast_btn">
+       <widget class="QPushButton" name="deletelast_btn">
         <property name="text">
          <string>删除上条对话</string>
         </property>
@@ -166,7 +174,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="saveChat_btn">
+       <widget class="QPushButton" name="pushButton_2">
         <property name="text">
          <string>保存对话</string>
         </property>
@@ -189,7 +197,7 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <widget class="QLineEdit" name="curSys_btn">
+     <widget class="QLineEdit" name="lineEdit">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -212,7 +220,7 @@
        <string>System Prompt</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="loadSys_btn">
+     <widget class="QPushButton" name="pushButton">
       <property name="geometry">
        <rect>
         <x>500</x>
@@ -229,7 +237,7 @@
     <widget class="QFrame" name="information">
      <property name="geometry">
       <rect>
-       <x>520</x>
+       <x>525</x>
        <y>20</y>
        <width>111</width>
        <height>83</height>
@@ -258,17 +266,192 @@
       </item>
      </layout>
     </widget>
-    <widget class="QTextBrowser" name="bot_text">
+    <widget class="QScrollArea" name="scrollArea">
      <property name="geometry">
       <rect>
-       <x>10</x>
+       <x>0</x>
        <y>10</y>
-       <width>441</width>
-       <height>331</height>
+       <width>401</width>
+       <height>201</height>
       </rect>
      </property>
-     <property name="styleSheet">
-      <string notr="true">border-radius: 20px</string>
+     <property name="minimumSize">
+      <size>
+       <width>401</width>
+       <height>201</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>401</width>
+       <height>201</height>
+      </size>
+     </property>
+     <property name="verticalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOn</enum>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QAbstractScrollArea::AdjustToContents</enum>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>378</width>
+        <height>199</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QFrame" name="frame_2">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="minimumSize">
+             <size>
+              <width>41</width>
+              <height>31</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>41</width>
+              <height>31</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QTextEdit" name="textEdit">
+            <property name="minimumSize">
+             <size>
+              <width>191</width>
+              <height>41</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>191</width>
+              <height>41</height>
+             </size>
+            </property>
+            <property name="verticalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
+            </property>
+            <property name="horizontalScrollBarPolicy">
+             <enum>Qt::ScrollBarAsNeeded</enum>
+            </property>
+            <property name="markdown">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="frame_3">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QTextEdit" name="textEdit_2">
+            <property name="minimumSize">
+             <size>
+              <width>191</width>
+              <height>41</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>191</width>
+              <height>41</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_5">
+            <property name="minimumSize">
+             <size>
+              <width>41</width>
+              <height>31</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>41</width>
+              <height>31</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QPushButton" name="pushButton_3">
+     <property name="geometry">
+      <rect>
+       <x>430</x>
+       <y>140</y>
+       <width>93</width>
+       <height>28</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>PushButton</string>
      </property>
     </widget>
    </widget>

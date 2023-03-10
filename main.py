@@ -2,12 +2,13 @@ import sys
 import openai
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtCore import QThread, pyqtSignal  # 导入线程模块
+from PyQt5 import QtGui
+from PyQt5.QtGui import QTextCursor
 from Mainwindow import Ui_MainWindow
 import markdown
 import requests, json
 import traceback
 
-apiKey = "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"
 
 API_URL = "https://api.openai.com/v1/chat/completions"
 headers = {"Content-Type": "application/json", "Authorization": f"Bearer {apiKey}"}
@@ -17,6 +18,8 @@ bot_format = []
 botFlag = True
 userFlag = 1 - botFlag
 
+
+totalCount = 0
 testHtml = """
 <html>
 <head>
@@ -48,8 +51,12 @@ class DemoMain(QMainWindow, Ui_MainWindow):
         # self.test_btn.clicked.connect(self.addBotFrame)
 
         #
+        self.globalHtml = []
         self.threadList = []
-        # self.bot_text.setHtml(testHtml)
+        #
+        self.unrenderStr = ""
+        self.curRenderLength = 0
+        self.rerenderCount = 0
 
     def startRequestTask(self):
         self.updataStatus("等待响应")
@@ -59,6 +66,7 @@ class DemoMain(QMainWindow, Ui_MainWindow):
         self.threadList.append(requestTask)
 
         requestTask.renderUserSignal.connect(self.renderUser)
+        requestTask.renderDivSignal.connect(self.renderDiv)
         requestTask.renderBotSignal.connect(self.renderBot)
         requestTask.finishSignal.connect(self.finishRequestTask)
         requestTask.stateUpdateSignal.connect(self.updataStatus)
@@ -66,7 +74,8 @@ class DemoMain(QMainWindow, Ui_MainWindow):
 
     def finishRequestTask(self):
         self.send_btn.setEnabled(True)
-
+        self.bot_text.moveCursor(QtGui.QTextCursor.End)
+        print(self.bot_text.toHtml())
     def shutRequestTask(self):
         self.updataStatus("中止生成回答")
         bot.pop()
@@ -78,45 +87,58 @@ class DemoMain(QMainWindow, Ui_MainWindow):
         markedContent = markdown.markdown(
             content, extensions=["fenced_code", "codehilite"]
         )
-        # print(markedSentence)
-
-        # self.bot_text.append(markedContent)
-
-        # div_class = "user" if is_user else "robot"
-        # div_style = "margin-left: auto;" if is_user else ""
-        # html = f'<div class="chat"><div class="{div_class}" style="{div_style}">{markedContent}</div></div>'
+        print(markedContent)
+        html = f'<div class="user" style="margin-left: auto;">{markedContent}</div>'
         # 插入HTML代码到文本框中
         # self.bot_text.append(html)
         # self.bot_text.moveCursor(QtGui.QTextCursor.End)  # 将光标移动到文本末尾
-        self.bot_text.insertHtml(markedContent)
+        self.bot_text.append(html)
+
+    def renderDiv(self):
+        html = f'<div class="robot"></div>'
+        self.bot_text.append(html)
+        self.bot_text.moveCursor(QtGui.QTextCursor.End)
+        cursor = self.bot_text.textCursor()
+        cursor.movePosition(QTextCursor.Left, QTextCursor.MoveAnchor, 6)
 
     def renderBot(self, delta: str):
+        self.unrenderStr += delta
+        self.rerenderCount += 1
+        if self.rerenderCount % 10 == 0:
+            self.rerender()
+        # print(markedContent)
         self.bot_text.insertHtml(delta)
+
+    def rerender(self):
+        self.unrenderLength = len(self.unrenderStr)
+        cursor = self.bot_text.textCursor()
+
+        markedContent = markdown.markdown(
+            self.unrenderStr, extensions=["fenced_code", "codehilite"]
+        )
+        unrenderStr = ""
+        self.curRenderLength += len(markedContent)
+        cursor.movePosition(
+            QTextCursor.Left,
+            QTextCursor.KeepAnchor,
+            self.curRenderLength + self.unrenderLength,
+        )
+        cursor.deleteChar()
+        self.bot_text.insertHtml(markedContent)
 
     def updataStatus(self, message: str):
         self.statusBar().showMessage(message)
 
     def initQTextBrowser(self):
         mycss = """ 
-            div.chat {
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                margin-bottom: 5px;
-
-                background-color: #f0f0f0;
-                padding: 16px;
-                border-radius: 8px;
-            }
-
-            div.user {
-                background-color: #D58777;
+            .user {
+                background-color: #d9d9e3;
                 border-radius: 5px;
                 padding: 5px;
                 margin-left: 50%;
             }
 
-            div.robot {
+            .robot {
                 background-color: #D58777;
                 border-radius: 5px;
                 padding: 5px;
@@ -134,6 +156,7 @@ class DemoMain(QMainWindow, Ui_MainWindow):
 class RequestTask(QThread):
     renderUserSignal = pyqtSignal(str)
     renderBotSignal = pyqtSignal(str)
+    renderDivSignal = pyqtSignal()
     finishSignal = pyqtSignal()
     stateUpdateSignal = pyqtSignal(str)
 
@@ -160,6 +183,7 @@ class RequestTask(QThread):
 
         # try:
         response = requests.post(API_URL, headers=headers, json=payload, stream=True)
+        self.renderDivSignal.emit()
         # print(1)
         bot.append([botFlag, partialWords])
         for chunk in response.iter_lines():
@@ -182,6 +206,7 @@ class RequestTask(QThread):
                 partial = delta["content"] if "content" in delta else ""
                 partialWords += partial
                 # print(data["choices"][0]["delta"])
+                print(partial)
                 # print(partialWords)
                 bot[-1][1] = partialWords
                 self.renderBotSignal.emit(partial)
@@ -210,6 +235,7 @@ class RequestTask(QThread):
         #     bot_format.pop()
         #     self.stateUpdateSignal.emit("未知错误。")
         #     print("未知错误。")
+
         bot.append(partialWords)
         self.finishSignal.emit()
 
