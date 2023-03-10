@@ -9,20 +9,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>664</width>
-    <height>669</height>
+    <width>847</width>
+    <height>885</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>664</width>
-    <height>669</height>
+    <width>0</width>
+    <height>0</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>664</width>
-    <height>669</height>
+    <width>16777215</width>
+    <height>16777215</height>
    </size>
   </property>
   <property name="font">
@@ -39,9 +39,15 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>641</width>
-      <height>601</height>
+      <width>821</width>
+      <height>811</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>黑体</family>
+      <pointsize>14</pointsize>
+     </font>
     </property>
     <property name="frameShape">
      <enum>QFrame::StyledPanel</enum>
@@ -49,85 +55,13 @@
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>
     </property>
-    <widget class="QFrame" name="user_input">
-     <property name="geometry">
-      <rect>
-       <x>7</x>
-       <y>343</y>
-       <width>581</width>
-       <height>101</height>
-      </rect>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QTextEdit" name="user_text">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QFrame" name="btns">
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
-          <widget class="QPushButton" name="send_btn">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>发送</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="shut_btn">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>停止</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-     </layout>
-    </widget>
     <widget class="QFrame" name="chat_control">
      <property name="geometry">
       <rect>
-       <x>19</x>
-       <y>449</y>
-       <width>561</width>
-       <height>52</height>
+       <x>10</x>
+       <y>660</y>
+       <width>671</width>
+       <height>53</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -138,9 +72,9 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QPushButton" name="newChat_btn">
+       <widget class="QPushButton" name="saveChat_btn">
         <property name="text">
-         <string>新的对话</string>
+         <string>保存对话</string>
         </property>
        </widget>
       </item>
@@ -166,9 +100,9 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="saveChat_btn">
+       <widget class="QPushButton" name="newChat_btn">
         <property name="text">
-         <string>保存对话</string>
+         <string>新的对话</string>
         </property>
        </widget>
       </item>
@@ -178,9 +112,9 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>520</y>
-       <width>601</width>
-       <height>71</height>
+       <y>720</y>
+       <width>670</width>
+       <height>61</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -215,8 +149,8 @@
      <widget class="QPushButton" name="loadSys_btn">
       <property name="geometry">
        <rect>
-        <x>500</x>
-        <y>20</y>
+        <x>480</x>
+        <y>30</y>
         <width>93</width>
         <height>28</height>
        </rect>
@@ -229,10 +163,10 @@
     <widget class="QFrame" name="information">
      <property name="geometry">
       <rect>
-       <x>520</x>
-       <y>20</y>
-       <width>111</width>
-       <height>83</height>
+       <x>689</x>
+       <y>12</y>
+       <width>120</width>
+       <height>71</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -261,10 +195,10 @@
     <widget class="QTextBrowser" name="bot_text">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>10</y>
-       <width>441</width>
-       <height>331</height>
+       <x>12</x>
+       <y>12</y>
+       <width>671</width>
+       <height>591</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -278,6 +212,72 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
+    <widget class="QFrame" name="btns">
+     <property name="geometry">
+      <rect>
+       <x>690</x>
+       <y>590</y>
+       <width>117</width>
+       <height>81</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QPushButton" name="send_btn">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>发送</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="shut_btn">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>停止</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QTextEdit" name="user_text">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>610</y>
+       <width>671</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -285,7 +285,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>664</width>
+     <width>847</width>
      <height>26</height>
     </rect>
    </property>

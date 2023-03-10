@@ -1,5 +1,4 @@
 import sys
-import openai
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtCore import QThread, pyqtSignal  # 导入线程模块
 from PyQt5 import QtGui
@@ -46,8 +45,10 @@ class DemoMain(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.initQTextBrowser()
         # 绑定逻辑
+        self.send_btn.setEnabled(False)
         self.send_btn.clicked.connect(self.startRequestTask)
         self.shut_btn.clicked.connect(self.shutRequestTask)
+        self.user_text.textChanged.connect(self.dealNoInput)
         # self.test_btn.clicked.connect(self.addBotFrame)
 
         #
@@ -59,8 +60,9 @@ class DemoMain(QMainWindow, Ui_MainWindow):
         self.rerenderCount = 0
 
     def startRequestTask(self):
-        self.updataStatus("等待响应")
+        self.updataStatus("等待回答")
         self.send_btn.setEnabled(False)
+        self.shut_btn.setEnabled(True)
         requestTask = RequestTask(self.user_text.toPlainText())
         self.user_text.clear()
         self.threadList.append(requestTask)
@@ -68,17 +70,24 @@ class DemoMain(QMainWindow, Ui_MainWindow):
         requestTask.renderSignal.connect(self.render)
         requestTask.finishSignal.connect(self.finishRequestTask)
         requestTask.stateUpdateSignal.connect(self.updataStatus)
+
         requestTask.start()
 
     def finishRequestTask(self):
-        self.send_btn.setEnabled(True)
+        if self.user_text.toPlainText():
+            self.send_btn.setEnabled(True)
+        self.shut_btn.setEnabled(False)
         # print(self.bot_text.toHtml())
 
     def shutRequestTask(self):
         self.updataStatus("中止生成回答")
-        bot.pop()
+        if len(bot) != 0:
+            bot.pop()
+            bot_format.pop()
         for thread in self.threadList:
             thread.finishSignal.emit()
+            thread.runPermission = False
+        self.shut_btn.setEnabled(False)
 
     def render(self):
         self.bot_text.clear()
@@ -93,8 +102,8 @@ class DemoMain(QMainWindow, Ui_MainWindow):
             )
         self.bot_text.setHtml(html)
         self.bot_text.moveCursor(QtGui.QTextCursor.End)
-        print(self.bot_text.toHtml())#python 线性回归
-        
+        # python 线性回归
+
     def updataStatus(self, message: str):
         self.statusBar().showMessage(message)
 
@@ -112,10 +121,41 @@ class DemoMain(QMainWindow, Ui_MainWindow):
                 border-radius: 5px;
                 padding: 5px;
             }
+            code {
+                display: inline;
+                white-space: break-spaces;
+                border-radius: 6px;
+                margin: 0 2px 0 2px;
+                padding: .2em .4em .1em .4em;
+                background-color: rgba(175,184,193,0.2);
+            }
+            pre {
+                display: block;
+                white-space: pre;
+                background-color: hsla(0, 0%, 0%, 72%);
+                border: solid 5px var(--color-border-primary) !important;
+                border-radius: 8px;
+                padding: 0 1.2rem 1.2rem;
+                margin-top: 1em !important;
+                color: #FFF;
+                box-shadow: inset 0px 8px 16px hsla(0, 0%, 0%, .2)
+            }
+            pre code, pre code code {
+                font-family: Cascadia Code, monospace,'宋体';
+                background-color: transparent !important;
+                margin: 0;
+                padding: 0;
+            }
         """
         self.bot_text.setStyleSheet(mycss)
         self.bot_text.document().setDefaultStyleSheet(mycss)
         ...
+
+    def dealNoInput(self):
+        if self.user_text.toPlainText() != "":
+            self.send_btn.setEnabled(True)
+        else:
+            self.send_btn.setEnabled(False)
 
 
 # mmmmmmmmmmnmjkhjbjnja
@@ -130,6 +170,7 @@ class RequestTask(QThread):
     def __init__(self, inputSentence: str):
         super(RequestTask, self).__init__()
         self.inputSentence = inputSentence
+        self.runPermission = True
 
     def run(self):
         bot.append([userFlag, self.inputSentence])
@@ -145,69 +186,42 @@ class RequestTask(QThread):
             "presence_penalty": 0,
             "frequency_penalty": 0,
         }
+        print(bot_format)
         partialWords = ""
-        # try:
-        response = requests.post(API_URL, headers=headers, json=payload, stream=True)
-        # print(1)
+        try:
+            response = requests.post(
+                API_URL, headers=headers, json=payload, stream=True
+            )
+        except Exception as e:
+            traceback.print_exc()
         bot.append([botFlag, partialWords])
         bot_format.append({"role": "assistant", "content": partialWords})
         for chunk in response.iter_lines():
-            # check whether each line is non-empty
+            self.stateUpdateSignal.emit("回答生成中")
+            # print(f"chunk:{chunk}")
             if chunk:
-                #     # decode each line as response data is in bytes
                 try:
                     data = json.loads(chunk.decode()[6:])
                     delta = data["choices"][0]["delta"]
+                    # print(data)
                     if len(delta) == 0:
-                        #             # print(3)
                         break
                 except Exception as e:
                     traceback.print_exc()
-                    # print(e)
                     break
-
-                # print(data)
                 status_text = f"id: {data['id']}, finish_reason: {data['choices'][0]['finish_reason']}"
                 partial = delta["content"] if "content" in delta else ""
-                # print(data["choices"][0]["delta"])
-                # print(partial)
+                if not self.runPermission:
+                    del response  # 传输流不会立即停止
+                    return self.finishSignal.emit()
                 bot[-1][1] += partial
                 bot_format[-1]["content"] += partial
                 self.renderSignal.emit()
-        # except openai.error.AuthenticationError:
-        #     bot.pop()
-        #     bot_format.pop()
-        #     self.stateUpdateSignal.emit("API验证错误。")
-        #     print("API验证错误。")
-        # except openai.error.Timeout:
-        #     bot.pop()
-        #     bot_format.pop()
-        #     self.stateUpdateSignal.emit("请求超时。")
-        #     print("请求超时。")
-        # except openai.error.APIConnectionError:
-        #     bot.pop()
-        #     bot_format.pop()
-        #     self.stateUpdateSignal.emit("API连接错误。")
-        #     print("API连接错误。")
-        # except openai.error.RateLimitError:
-        #     bot.pop()
-        #     bot_format.pop()
-        #     self.stateUpdateSignal.emit("请求频繁。")
-        #     print("请求频繁。")
-        # except:
-        #     bot.pop()
-        #     bot_format.pop()
-        #     self.stateUpdateSignal.emit("未知错误。")
-        #     print("未知错误。")
-
-        # bot.append(partialWords)
+            if not self.runPermission:
+                del response  # 传输流不会立即停止
+                return self.finishSignal.emit()
+        self.stateUpdateSignal.emit("生成完毕")
         self.finishSignal.emit()
-
-    def getPartialContent(self):
-        ...
-
-    def buildContentStream(self):
-        ...
 
 
 if __name__ == "__main__":
