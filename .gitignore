@@ -135,4 +135,6 @@ dmypy.json
 *.drawio
 *.dtmp
 *.bkp
-./deskchatv1
+/deskchatv1
+*.7z
+*.rar
