@@ -138,3 +138,4 @@ dmypy.json
 /deskchatv1
 *.7z
 *.rar
+test.py
