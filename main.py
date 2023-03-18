@@ -4,49 +4,50 @@ import os
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-
-import openai
 from PyQt5 import QtGui
 from Mainwindow import Ui_MainWindow
+
+from zipimport import zipimporter
+
+
+def create_module(self, spec):
+    return None
+
+
+def exec_module(self, module):
+    exec(self.get_code(module.__name__), module.__dict__)
+
+
+zipimporter.create_module = create_module
+zipimporter.exec_module = exec_module
+
 import markdown
 import requests, json
+
+
+zipimporter.exec_module = exec_module
 import pickle
 from utils import *
 
-apiKey = "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"
-openai.api_key = apiKey
-
-API_URL = "https://api.openai.com/v1/chat/completions"
-headers = {"Content-Type": "application/json", "Authorization":"Bearer {apiKey}"}
-
-global bot, botFormat
-bot = []
-botFormat = []
-botFlag = True
-userFlag = 1 - botFlag
-
-
-totalCount = 0
-testHtml = """
-<html>
-<head>
-    <style type="text/css">
-        div {
-            border-radius: 10px; /* 圆角半径为 10px */
-            background-color: #EFEFEF;
-            padding: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div>Hello, world!</div>
-</body>
-</html>
-"""
+from globals import *
+from request_thread import RequestTask
+import copy
 
 
 class DemoMain(QMainWindow, Ui_MainWindow):
     def __init__(self):
+        #
+        self.globalHtml = []
+        self.requestThreadList = []
+        self.timeThreadList = []
+        self.loadedHistory = []
+        self.itemList = []
+        #
+        self.unrenderStr = ""
+        self.curRenderLength = 0
+        self.rerenderCount = 0
+        self.isRunning = False
+        self.slm = QStringListModel()
         # 初始化父类
         super().__init__()
         # 初始化界面
@@ -55,127 +56,28 @@ class DemoMain(QMainWindow, Ui_MainWindow):
         self.loadHistory()
         # 绑定按钮逻辑.toPlainText
         self.send_btn.setEnabled(False)
-        self.send_btn.clicked.connect(
-            lambda: self.startRequestTask(self.user_text.toPlainText(), False)
-        )
+        self.send_btn.clicked.connect(self.getAnwser)
+        shortcut = QShortcut(QKeySequence("Enter"), self)
+        shortcut.activated.connect(self.send_btn.click)
         self.shut_btn.clicked.connect(self.shutRequestTask)
         self.saveChat_btn.clicked.connect(self.saveHistory)
-        self.summary_btn.clicked.connect(
-            lambda: self.startRequestTask(
-                "请帮我总结一下上述对话的内容，实现减少字数的同时，保证对话的质量。在总结中不要加入这一句话。", True
-            )
-        )
+        self.summary_btn.clicked.connect(self.summaryChat)
         self.deleteLast_btn.clicked.connect(self.deleteLastChat)
-
+        self.regen_btn.clicked.connect(self.regenLastChat)
+        self.newChat_btn.clicked.connect(self.newChat)
         # 其它组件逻辑
         self.user_text.textChanged.connect(self.dealNoInput)
-
-        #
-        self.globalHtml = []
-        self.threadList = []
-        self.loadedHistory = []
-        self.itemList = []
-        #
-        self.unrenderStr = ""
-        self.curRenderLength = 0
-        self.rerenderCount = 0
-
-    def startRequestTask(self, content: str, summaryFlag: bool):
-        self.updateStatus("等待回答")
-        self.send_btn.setEnabled(False)
-        self.shut_btn.setEnabled(True)
-        requestTask = RequestTask(content, summaryFlag=summaryFlag)  # 使线程不会在此函数结束时回收内存
-        self.user_text.clear()
-        self.threadList.append(requestTask)
-
-        requestTask.renderSignal.connect(self.render)
-        requestTask.finishSignal.connect(self.finishRequestTask)
-        requestTask.stateUpdateSignal.connect(self.updateStatus)
-        requestTask.errorSignal.connect(self.showErrorMessage)
-
-        requestTask.start()
-
-    def finishRequestTask(self):
-        if self.user_text.toPlainText():
-            self.send_btn.setEnabled(True)
-        self.shut_btn.setEnabled(False)
-        # self.threadList = []
-        # print(self.bot_text.toHtml())
-
-    def shutRequestTask(self):
-        self.updateStatus("中止生成回答")
-        if len(bot) != 0:
-            bot.pop()
-            botFormat.pop()
-        for thread in self.threadList:
-            thread.finishSignal.emit()
-            thread.runPermission = False
-            del thread
-        self.shut_btn.setEnabled(False)
-
-    def render(self):
-        self.bot_text.clear()# TODO
-        html = ""
-        for chat in bot:
-            # print(chat)
-            precessdStr = chat[1]
-            precessdStr = precessdStr.replace('\n\n','\n')
-            precessdStr = precessdStr.replace('\n\n','\n')
-            # print(precessdStr)
-            markedContent = markdown.markdown(
-                precessdStr, extensions=["fenced_code", "codehilite"]
-            )
-            html += f'<div class="user">{markedContent}</div>'
-        # print(self.bot_text.toHtml())
-        # print(html)
-        self.bot_text.setHtml(html)
-        self.bot_text.moveCursor(QtGui.QTextCursor.End)
-        # python 线性回归
-
-    def updateStatus(self, message: str):
-        self.statusBar().showMessage(message)
-
-    def initQTextBrowser(self):
-        with open('./mycss.css', 'r',encoding='utf-8') as f:
-            mycss = f.read()
-        
-        # self.bot_text.setStyleSheet(mycss)
-        self.bot_text.document().setDefaultStyleSheet(mycss)
+        self.user_text.setLineWrapMode(QTextEdit.NoWrap)
+        self.historyView.clicked.connect(self.showChat)
 
     def dealNoInput(self):
-        if self.user_text.toPlainText() != "":
+        if self.user_text.toPlainText() != "" and not self.isRunning:
             self.send_btn.setEnabled(True)
         else:
             self.send_btn.setEnabled(False)
 
-    def saveHistory(self):
-        summary = self.summaryTitle()
-        bot.insert(0, ["title", summary])
-        m = len(os.listdir("./user"))
-        with open(f"./user/history.pickle_{m}", "wb") as f:
-            pickle.dump(bot, f)
-            m += 1
-
-    def loadHistory(self, filePath: str = "./user"):  # list[0] = ["user","hello!"]
-        # 从文件中读取并反序列化列表
-        for i in range(len(os.listdir(filePath))):
-            with open(f"{filePath}/historyList.pickle_{i}", "rb") as f:
-                history = pickle.load(f)
-                self.loadedHistory.append(history[1:])
-                self.itemList.append(history[0][1])
-                self.historyList.addItem(history[0][1])
-
-    def summaryTitle(self):
-        self.Summary()
-        # while len(self.threadList) != 0:
-        # print(len(self.threadList))
-        title = bot[-1][1]
-        bot.pop()
-        bot.pop()
-        botFormat.pop()
-        botFormat.pop()
-        self.render()
-        return title
+    def dealTaskInformation(self, infomation: list):
+        self.pingNum.setNum(infomation[0])
 
     def deleteLastChat(self):
         reply = QMessageBox.question(
@@ -185,110 +87,162 @@ class DemoMain(QMainWindow, Ui_MainWindow):
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
-        if reply == QMessageBox.Yes:
-            bot.pop()
-            bot.pop()
-            botFormat.pop()
-            botFormat.pop()
-            # print(bot)
+        m = len(myChat)
+        if reply == QMessageBox.Yes and m >= 2:
+            if m % 2 == 0:
+                myChat.pop()
+                myChat.pop()
+            else:
+                myChat.pop()
             self.render()
+
+    def finishRequestTask(self):
+        self.isRunning = False
+        if self.user_text.toPlainText():
+            self.send_btn.setEnabled(True)
+        self.shut_btn.setEnabled(False)
+
+    def getAnwser(self):
+        self.startRequestTask(self.user_text.toPlainText(), False)
+
+    def getSummary(self, summary: str, forTitle: bool):
+        if forTitle:
+            myChat.title = summary
+            if len(myChat) > 2:
+                invalid_chars = '\\/:*?"<>.|'
+                summary = summary.replace("\n", "")
+                for char in invalid_chars:
+                    summary = summary.replace(char, "")
+                myChat.pop()
+                myChat.pop()
+                with open(f"./user/{summary}.pickle", "wb") as f:
+                    pickle.dump(myChat, f)
+                self.render()
+                self.loadHistory()
+
+    def initQTextBrowser(self):
+        with open("./mycss.css", "r", encoding="utf-8") as f:
+            mycss = f.read()
+
+        # self.bot_text.setStyleSheet(mycss)
+        self.bot_text.document().setDefaultStyleSheet(mycss)
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        if self.user_text.hasFocus() and key == Qt.Key_Return:
+            self.send_btn.click()
+        elif event.modifiers() == Qt.ControlModifier and key == Qt.Key_S:
+            self.saveChat_btn.click()
+        elif event.key() == Qt.Key_Return:
+            ...
+        elif event.key() == Qt.Key_Return:
+            ...
+        elif event.key() == Qt.Key_Return:
+            ...
+        elif event.key() == Qt.Key_Return:
+            ...
+        elif event.key() == Qt.Key_Return:
+            ...
+        elif event.key() == Qt.Key_Return:
+            ...
+        elif event.key() == Qt.Key_Return:
+            ...
+
+    def loadHistory(self, folderPath: str = "./user"):  # list[0] = ["user","hello!"]
+        # 从文件中读取并反序列化列表
+        self.loadedHistory.clear()
+        file_names = [f for f in os.listdir(folderPath) if f.endswith("pickle")]
+        for file_name in file_names:
+            file_path = os.path.join(folderPath, file_name)
+            with open(file_path, "rb") as f:
+                data = pickle.load(f)
+                self.loadedHistory.append(data)
+        self.slm.setStringList([name.replace(".pickle", "") for name in file_names])
+        self.historyView.setModel(self.slm)
+
+    def newChat(self):
+        myChat.clear()
+        self.render()
+
+    def regenLastChat(self):
+        if not self.isRunning:
+            if len(myChat) >= 2:
+                myChat.pop()
+                lastUserSentence = myChat.pop().content
+                self.startRequestTask(lastUserSentence, False)
+
+    def render(self):
+        self.bot_text.clear()  # TODO
+        html = ""
+        content = ""
+        for sentence in myChat:
+            content += sentence.content
+            markedContent = markdown.markdown(
+                sentence.content, extensions=["fenced_code", "codehilite"]
+            )
+            html += f'<div class="{sentence.role}"><div>{markedContent}</div></div>'
+
+        # self.tokensNum.setNum(calcTokens(content))
+        self.bot_text.setHtml(html)
+        self.bot_text.moveCursor(QtGui.QTextCursor.End)
+
+    def saveHistory(self):
+        self.startRequestTask(summaryTitleString, True)
+
+    def showChat(self, index: QModelIndex):
+        myChat.clear()
+        print("cleared,now id is :", id(myChat))
+        loadChat = copy.copy(self.loadedHistory[index.row()])
+        for sentence in loadChat:
+            myChat.append(Sentence(sentence.role, sentence.content))
+        print("content is :\n", myChat)
+        self.render()
 
     def showErrorMessage(self, error: str):
         QMessageBox.critical(self, "Error", error)
+
+    def shutRequestTask(self):
+        self.updateStatus("中止生成回答")
+        for thread in self.requestThreadList:
+            thread.finishSignal.emit()
+            thread.runPermission = False
+            del thread
+        self.shut_btn.setEnabled(False)
+
+    def startRequestTask(self, content: str, summaryFlag: bool):
+        if not self.isRunning:
+            self.isRunning = True
+            self.updateStatus("等待回答")
+            self.send_btn.setEnabled(False)
+            self.shut_btn.setEnabled(True)
+            requestTask = RequestTask(content, summaryFlag=summaryFlag)
+            self.user_text.clear()
+            # 使线程不会在startRequestTask函数结束时回收内存
+            self.requestThreadList.append(requestTask)
+            # 绑定线程信号
+            requestTask.renderSignal.connect(self.render)
+            requestTask.finishSignal.connect(self.finishRequestTask)
+            requestTask.stateUpdateSignal.connect(self.updateStatus)
+            requestTask.errorSignal.connect(self.showErrorMessage)
+            requestTask.summaryFinishSignal.connect(self.getSummary)
+            requestTask.informationUpdateSignal.connect(self.dealTaskInformation)
+            requestTask.start()
+
+    def summaryChat(self):
+        self.startRequestTask(summaryString, False)
+
+    def updateDelay(self, delay: int):
+        self.pingNum.setNum(delay)
+
+    def updateStatus(self, message: str):
+        self.statusBar().showMessage(message)
 
 
 # mmmmmmmmmmnmjkhjbjnja
 
 
-class RequestTask(QThread):
-    renderSignal = pyqtSignal()
-    finishSignal = pyqtSignal()
-    stateUpdateSignal = pyqtSignal(str)
-    errorSignal = pyqtSignal(str)
-
-    def __init__(self, inputSentence: str, summaryFlag: bool):
-        super(RequestTask, self).__init__()
-        self.inputSentence = inputSentence
-        self.runPermission = True
-        self.summaryFlag = summaryFlag
-
-    def run(self):
-        bot.append([userFlag, self.inputSentence])
-        botFormat.append({"role": "user", "content": self.inputSentence})
-        self.renderSignal.emit()
-        # print(self.summaryFlag)
-        if not self.summaryFlag:
-            payload = {
-                "model": "gpt-3.5-turbo",
-                "messages": botFormat,  # [{"role": "user", "content": f"{inputs}"}],
-                "temperature": 1,  # 1.0,
-                "top_p": 1,  # 1.0,
-                "n": 1,
-                "stream": True,
-                "presence_penalty": 0,
-                "frequency_penalty": 0,
-            }
-            # print(botFormat)
-            with requests.Session() as session:
-                try:
-                    response = session.post(
-                        API_URL, headers=headers, json=payload, stream=True
-                    )
-                    content = ""
-                    # 新增空元素，准备接受流式传输内容
-                    bot.append([botFlag, content])
-                    botFormat.append({"role": "assistant", "content": content})
-                    # 开始获取流式传输内容
-                    for chunk in response.iter_lines():
-                        self.stateUpdateSignal.emit("回答生成中")
-                        if not self.runPermission:
-                            response.raw.close()
-                            return self.finishSignal.emit()  # 中止函数并发出中止信号
-                        if chunk:
-                            try:
-                                # print(chunk)
-                                # print(chunk.decode()[6:])
-                                data = json.loads(chunk.decode()[6:])
-                                print(data)
-                                delta = data["choices"][0]["delta"]
-                                if len(delta) == 0:
-                                    break
-                            except Exception as e:
-                                self.errorSignal.emit(f"line 255 : {e}")
-                                break
-                            # status_text = f"id: {data['id']}, finish_reason: {data['choices'][0]['finish_reason']}"
-                            partialWords = (
-                                delta["content"] if "content" in delta else ""
-                            )
-                            bot[-1][1] += partialWords
-                            botFormat[-1]["content"] += partialWords
-                            self.renderSignal.emit()
-                except Exception as e:
-                    self.errorSignal.emit(f"line 265:{e}")
-
-            self.stateUpdateSignal.emit("生成完毕")
-        else:
-            try:
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=botFormat,
-                )
-                # print(response)
-                content = response["choices"][0]["message"]["content"]
-                # totalTokens = response["usage"]["total_tokens"]
-                # print(content)
-                bot.append([botFlag, content])
-                botFormat.append({"role": "assistant", "content": content})
-                print(botFormat)
-                self.renderSignal.emit()
-                self.stateUpdateSignal.emit("生成完毕")
-            except Exception as e:
-                self.errorSignal.emit(f"{e}")
-
-        self.finishSignal.emit()
-
-
 if __name__ == "__main__":
+    print(id(myChat))
     app = QApplication(sys.argv)
     # 实例化页面并展示
     demo_win = DemoMain()

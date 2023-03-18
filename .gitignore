@@ -139,3 +139,6 @@ dmypy.json
 *.7z
 *.rar
 test.py
+/img
+/user*
+/.idea

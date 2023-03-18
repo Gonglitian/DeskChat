@@ -1,30 +1,16 @@
-def parse_text(text):
-    lines = text.split("\n")
-    lines = [line for line in lines if line != ""]
-    count = 0
-    for i, line in enumerate(lines):
-        if "```" in line:
-            count += 1
-            items = line.split('`')
-            if count % 2 == 1:
-                lines[i] = f'<pre><code class="language-{items[-1]}">'
-            else:
-                lines[i] = f'<br></code></pre>'
-        else:
-            if i > 0:
-                if count % 2 == 1:
-                    line = line.replace("`", "\`")
-                    line = line.replace("<", "&lt;")
-                    line = line.replace(">", "&gt;")
-                    line = line.replace(" ", "&nbsp;")
-                    line = line.replace("*", "&ast;")
-                    line = line.replace("_", "&lowbar;")
-                    line = line.replace("-", "&#45;")
-                    line = line.replace(".", "&#46;")
-                    line = line.replace("!", "&#33;")
-                    line = line.replace("(", "&#40;")
-                    line = line.replace(")", "&#41;")
-                    line = line.replace("$", "&#36;")
-                lines[i] = "<br>"+line
-    text = "".join(lines)
-    return text
+# import jieba
+import time
+import requests
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5 import QtGui
+
+
+# def calcTokens(content: str) -> int:
+#     # 将英文单词和标点用空格分隔
+#     content = "".join([c if c.isalnum() else " " for c in content])
+#     # 对中文部分使用jieba分词
+#     seg_list = jieba.lcut(content, cut_all=False)
+#     # 过滤空格和空字符串
+#     return len([token for token in seg_list if token.strip()])
