@@ -12,9 +12,9 @@ from src.globals import *
 class RequestTask(QThread):
     renderSignal = pyqtSignal()
     finishSignal = pyqtSignal()
-    stateUpdateSignal = pyqtSignal(str)
+    stateUpdateSignal = pyqtSignal(str, bool)
     errorSignal = pyqtSignal(str)
-    summaryFinishSignal = pyqtSignal(str, bool)
+    summaryFinishSignal = pyqtSignal(bool)
     informationUpdateSignal = pyqtSignal(list)
 
     def __init__(self, inputSentence: str, summaryFlag: bool):
@@ -39,19 +39,23 @@ class RequestTask(QThread):
         }
         with requests.Session() as session:
             try:
+                self.stateUpdateSignal.emit("正在连接...", False)
                 startTime = time.time()
                 response = session.post(
-                    API_URL, headers=headers, json=payload, stream=True
+                    API_URL, headers=headers, json=payload, stream=True, timeout=5
                 )
                 endTime = time.time()
+
                 self.informationList.append(int((endTime - startTime) * 1000))
+                self.informationUpdateSignal.emit(self.informationList)
+
                 content = ""
                 # 新增空元素，准备接受流式传输内容
                 myChat.append(Sentence(ASSISTANT, content))
 
                 # 开始获取流式传输内容
                 for chunk in response.iter_lines():
-                    self.stateUpdateSignal.emit("回答生成中")
+                    self.stateUpdateSignal.emit("回答生成中", False)
                     if not self.runPermission:
                         response.raw.close()
                         return self.finishSignal.emit()  # 中止函数并发出中止信号
@@ -63,23 +67,26 @@ class RequestTask(QThread):
                                 break
                         except Exception as e:
                             self.errorSignal.emit(
-                                f"Message from API:{chunk.decode()},\n{traceback.format_exc()}"
+                                f"Message from API:\n{chunk.decode()},\n{traceback.format_exc()}"[
+                                    :500
+                                ]
+                                + "\n..."
                             )
                             break
                         # status_text = f"id: {data['id']}, finish_reason: {data['choices'][0]['finish_reason']}"
                         partialWords = delta["content"] if "content" in delta else ""
                         myChat.appendPartialWords(partialWords)
 
-                        self.informationUpdateSignal.emit(self.informationList)
                         self.renderSignal.emit()
 
             except Exception as e:
-                self.errorSignal.emit(traceback.format_exc())
+                self.errorSignal.emit(traceback.format_exc()[:500] + "\n...")
         if self.summaryFlag:
-            if myChat[-2] == summaryString:
-                self.summaryFinishSignal.emit(myChat[-1], False)
+            if myChat[-2].content == summaryString:
+                self.summaryFinishSignal.emit(False)
             else:
-                self.summaryFinishSignal.emit(myChat[-1], True)
-        self.stateUpdateSignal.emit("生成完毕")
+                myChat.title = myChat[-1].content
+                self.summaryFinishSignal.emit(True)
+        self.stateUpdateSignal.emit("生成完毕", True)
 
         self.finishSignal.emit()

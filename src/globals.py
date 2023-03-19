@@ -14,3 +14,6 @@ delay = 0
 SYS = "system"
 USER = "user"
 ASSISTANT = "assistant"
+
+
+icon_dir = "./resource/icons/"

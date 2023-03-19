@@ -15,7 +15,7 @@ class ChatManager:
         return len(self.context)
 
     def __getitem__(self, index):
-        return self.context[index].content
+        return self.context[index]
 
     def __setitem__(self, index, sentence: Sentence):
         self.context[index] = sentence
