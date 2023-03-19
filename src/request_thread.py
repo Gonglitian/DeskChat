@@ -4,9 +4,9 @@ from PyQt5.QtCore import *
 
 import traceback
 import time
-from chat_manager import Sentence, ChatManager
+from src.chat_manager import Sentence, ChatManager
 import requests, json
-from globals import *
+from src.globals import *
 
 
 class RequestTask(QThread):

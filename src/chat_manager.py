@@ -19,7 +19,7 @@ class ChatManager:
 
     def __setitem__(self, index, sentence: Sentence):
         self.context[index] = sentence
-        self.contextFormat[index]["content"] = {
+        self.contextFormat[index] = {
             "role": sentence.role,
             "content": sentence.content,
         }

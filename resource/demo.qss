@@ -1,0 +1,61 @@
+
+QPushButton {
+    background-color: rgb(204, 204, 204);
+    font: 15px 'Microsoft YaHei';
+    border: transparent;
+    border-radius: 4px;
+    padding: 10px 5px;
+}
+
+QPushButton:pressed:hover {
+    background-color: rgb(153, 153, 153);
+}
+
+QPushButton:hover {
+    background-color: rgb(230, 230, 230);
+}
+
+QPushButton:disabled {
+    background-color: rgb(204, 204, 204);
+    color: rgb(122, 122, 122);
+}
+QTextEdit {
+    background-color: #333333;
+    color: #cccccc;
+    font: 20px 'Cascadia Code';
+    border: none; 
+    border-radius: 8px;
+}
+
+QWebEngineView{
+    background-color: #333333;
+    color: #cccccc;
+    font: 20px 'Cascadia Code';
+    border: none; 
+    border-radius: 8px;
+}
+
+QMenu {
+    background-color: #1e1e1e;
+    border: 1px solid #2a82da;
+    padding: 4px;
+}
+
+QMenu::item {
+    color: #000ff0;
+    background-color: transparent;
+    padding: 2px 25px 2px 20px;
+    margin: 2px;
+    border-radius: 2px;
+}
+
+
+QMenu::item:selected {
+    background-color: #2a82da;
+    color: #f0f0f0;
+    border: none;
+}
+
+QMenu::icon {
+    padding-left: 10px;
+}

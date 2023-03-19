@@ -5,33 +5,18 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5 import QtGui
-from Mainwindow import Ui_MainWindow
-
-from zipimport import zipimporter
 
 
-def create_module(self, spec):
-    return None
+from src.utils import *
+from src.Mainwindow import Ui_MainWindow
+from src.globals import *
+from src.request_thread import RequestTask
+from src.chat_manager import *
 
-
-def exec_module(self, module):
-    exec(self.get_code(module.__name__), module.__dict__)
-
-
-zipimporter.create_module = create_module
-zipimporter.exec_module = exec_module
-
-import markdown
-import requests, json
-
-
-zipimporter.exec_module = exec_module
-import pickle
-from utils import *
-
-from globals import *
-from request_thread import RequestTask
+zipimporter_fix()
 import copy
+import markdown
+import pickle
 
 
 class DemoMain(QMainWindow, Ui_MainWindow):
@@ -121,7 +106,7 @@ class DemoMain(QMainWindow, Ui_MainWindow):
                 self.loadHistory()
 
     def initQTextBrowser(self):
-        with open("./mycss.css", "r", encoding="utf-8") as f:
+        with open("./state/mycss.css", "r", encoding="utf-8") as f:
             mycss = f.read()
 
         # self.bot_text.setStyleSheet(mycss)
@@ -242,7 +227,6 @@ class DemoMain(QMainWindow, Ui_MainWindow):
 
 
 if __name__ == "__main__":
-    print(id(myChat))
     app = QApplication(sys.argv)
     # 实例化页面并展示
     demo_win = DemoMain()

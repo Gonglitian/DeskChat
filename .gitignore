@@ -135,7 +135,7 @@ dmypy.json
 *.drawio
 *.dtmp
 *.bkp
-/deskchatv1
+/release
 *.7z
 *.rar
 test.py
