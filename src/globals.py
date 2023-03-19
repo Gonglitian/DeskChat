@@ -1,6 +1,6 @@
 from src.chat_manager import ChatManager
 
-apiKey = "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"
+apiKey = 0
 API_URL = "https://api.openai.com/v1/chat/completions"
 headers = {"Content-Type": "application/json", "Authorization": f"Bearer {apiKey}"}
 
