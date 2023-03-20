@@ -17,3 +17,15 @@ ASSISTANT = "assistant"
 
 
 icon_dir = "./resource/icons/"
+
+html_head = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <link href="./state/mycss.css" type="text/css" rel="stylesheet"></link>
+</head>
+<body>"""
+
+html_tail = """</body>
+</html>"""

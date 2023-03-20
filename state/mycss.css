@@ -5,7 +5,7 @@
 
 }
 
-.robot {
+.assistant {
     background-color: #D58777;
     border-radius: 5px;
     padding: 5px;
@@ -38,17 +38,4 @@ pre code code {
     background-color: transparent !important;
     margin: 0;
     padding: 0;
-}
-
-p {
-    display: none;
-}
-
-QTextBrowser p {
-    color: red;
-    font-size: 16px;
-}
-
-QTextBrowser div {
-    display: inline-block
 }

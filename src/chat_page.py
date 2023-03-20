@@ -161,9 +161,12 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
         # # self.bot_html.setStyleSheet(mycss)
         # self.bot_html.document().setDefaultStyleSheet(mycss)
         ...
+    def insertHtml(self,content):
 
+        pass
     def loadHistory(self, folderPath: str = "./user"):  # list[0] = ["user","hello!"]
-        # 从文件中读取并反序列化列表
+        if 'user' not in os.listdir('./'):
+            os.mkdir('./user')
         self.loadedHistory.clear()
         file_names = [f for f in os.listdir(folderPath) if f.endswith("pickle")]
         for file_name in file_names:
@@ -197,8 +200,12 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
             html += f'<div class="{sentence.role}"><div>{markedContent}</div></div>'
 
         # self.tokensNum.setNum(calcTokens(content))
-        self.bot_html.setHtml(html)
-        # self.bot_html.moveCursor(QtGui.QTextCursor.End)
+        html_composed = html_head+html+html_tail
+        #print(html_composed)
+        self.bot_html.setHtml(html_composed)
+        #self.bot_html.moveCursor(QtGui.QTextCursor.End)
+        #url = QUrl.fromLocalFile('./state/chat_page.html')
+        #self.bot_html.load(url)
 
     def saveHistory(self):
         self.startRequestTask(summaryTitleString, True)
