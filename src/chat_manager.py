@@ -10,7 +10,7 @@ class ChatManager:
         self.context = []
         self.contextFormat = []
         self.html = ""
-
+        self.is_saved = False
     def __len__(self):
         return len(self.context)
 

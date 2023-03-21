@@ -31,7 +31,7 @@ from qfluentwidgets import (
 from qfluentwidgets import FluentIcon as FIF
 from qframelesswindow import FramelessWindow, StandardTitleBar
 
-
+from src.globals import *
 class Widget(QFrame):
     def __init__(self, text: str, parent=None):
         super().__init__(parent=parent)

@@ -5,7 +5,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5 import QtGui
 
-
 from src.utils import *
 from src.globals import *
 from src.request_thread import RequestTask
@@ -13,6 +12,7 @@ from src.chat_manager import *
 
 zipimporter_fix()
 import copy
+import mdtex2html
 import markdown
 import pickle
 from qfluentwidgets import FluentIcon as FIF
@@ -28,6 +28,7 @@ from qfluentwidgets import (
     RoundMenu,
 )
 from src.chat_page_ui import Ui_chat_page_ui
+from src.utils import *
 
 
 class chatPage(QFrame, Ui_chat_page_ui, QWidget):
@@ -149,10 +150,7 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
                     myChat.title = myChat.title.replace(char, "")
                 myChat.pop()
                 myChat.pop()
-                with open(f"./user/{myChat.title}.pickle", "wb") as f:
-                    pickle.dump(myChat, f)
-                self.render()
-                self.loadHistory()
+                self.saveChat()
 
     def initQTextBrowser(self):
         # with open("./state/mycss.css", "r", encoding="utf-8") as f:
@@ -161,12 +159,13 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
         # # self.bot_html.setStyleSheet(mycss)
         # self.bot_html.document().setDefaultStyleSheet(mycss)
         ...
-    def insertHtml(self,content):
 
+    def insertHtml(self, content):
         pass
+
     def loadHistory(self, folderPath: str = "./user"):  # list[0] = ["user","hello!"]
-        if 'user' not in os.listdir('./'):
-            os.mkdir('./user')
+        if "user" not in os.listdir("./"):
+            os.mkdir("./user")
         self.loadedHistory.clear()
         file_names = [f for f in os.listdir(folderPath) if f.endswith("pickle")]
         for file_name in file_names:
@@ -178,6 +177,13 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
         self.comboBox.addItems([name.replace(".pickle", "") for name in file_names])
 
     def newChat(self):
+        if not myChat.is_saved:
+            w = MessageBox("Unsaved Chat", "Are you sure to swich to another Chat leaving this unsaved?", self)
+            user_choice = w.exec()
+            if user_choice == 1:
+                pass
+            else:
+                self.saveChat()
         myChat.clear()
         self.render()
 
@@ -189,23 +195,40 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
                 self.startRequestTask(lastUserSentence, False)
 
     def render(self):
+        myChat.is_saved = False
         self.bot_html.setHtml("")  # TODO
         html = ""
-        content = ""
         for sentence in myChat:
-            content += sentence.content
-            markedContent = markdown.markdown(
-                sentence.content, extensions=["fenced_code", "codehilite"]
-            )
+            content = parse_text(sentence.content)
+            markedContent = mdtex2html.convert(content, extensions=['fenced_code','codehilite','tables'])
             html += f'<div class="{sentence.role}"><div>{markedContent}</div></div>'
 
         # self.tokensNum.setNum(calcTokens(content))
-        html_composed = html_head+html+html_tail
-        #print(html_composed)
+        html_composed = html_head + html + html_tail
+        # print(html_composed)
         self.bot_html.setHtml(html_composed)
-        #self.bot_html.moveCursor(QtGui.QTextCursor.End)
-        #url = QUrl.fromLocalFile('./state/chat_page.html')
-        #self.bot_html.load(url)
+        self.bot_html.loadFinished.connect(lambda: self.bot_html.page().runJavaScript(
+            "window.scrollTo(0, document.body.scrollHeight);"
+        ))
+
+    def saveChat(self):
+        count = 0
+        myChat.is_saved = True
+        while (True):
+            try:
+                if count == 0:
+                    with open(f"./user/{myChat.title}.pickle", "wb") as f:
+                        pickle.dump(myChat, f)
+                    break
+                else:
+                    with open(f"./user/{myChat.title}_{count}.pickle", "wb") as f:
+                        pickle.dump(myChat, f)
+                    break
+            except Exception as e:
+                # self.showErrorMessage("有重复文件名")
+                count += 1
+        self.render()
+        self.loadHistory()
 
     def saveHistory(self):
         self.startRequestTask(summaryTitleString, True)
@@ -223,7 +246,7 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
     def showChat(self, index):
         myChat.clear()
         # print("cleared,now id is :", id(myChat))
-        print(index)
+        # print(index)
         loadChat = copy.copy(self.loadedHistory[index])
         for sentence in loadChat:
             myChat.append(Sentence(sentence.role, sentence.content))
@@ -250,7 +273,7 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
             # self.shut_btn.setEnabled(True)
             requestTask = RequestTask(content, summaryFlag=summaryFlag)
             self.user_text.clear()
-            # 使线程不会在startRequestTask函数结束时回收内存
+            # 使线程不会在startRequestTask函数结束时被回收内存
             self.requestThreadList.append(requestTask)
             # 绑定线程信号
             requestTask.renderSignal.connect(self.render)
@@ -272,8 +295,8 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
             if not self.stateTooltip:
                 self.stateTooltip = StateToolTip("Chat", message, self)
                 self.stateTooltip.move(
-                    self.width() * 0.85 - self.stateTooltip.width() / 2,
-                    self.height() * 0.8 - self.stateTooltip.height() / 2,
+                    int(self.width() * 0.85 - self.stateTooltip.width() / 2),
+                    int(self.height() * 0.8 - self.stateTooltip.height() / 2),
                 )
 
                 self.stateTooltip.show()

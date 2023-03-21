@@ -26,6 +26,7 @@ class RequestTask(QThread):
 
     def run(self):
         myChat.append(Sentence(USER, self.inputSentence))
+
         self.renderSignal.emit()
         payload = {
             "model": "gpt-3.5-turbo",
@@ -42,7 +43,7 @@ class RequestTask(QThread):
                 self.stateUpdateSignal.emit("正在连接...", False)
                 startTime = time.time()
                 response = session.post(
-                    API_URL, headers=headers, json=payload, stream=True, timeout=5
+                    API_URL, headers=headers, json=payload, stream=True, timeout=10
                 )
                 endTime = time.time()
 
@@ -68,7 +69,7 @@ class RequestTask(QThread):
                         except Exception as e:
                             self.errorSignal.emit(
                                 f"Message from API:\n{chunk.decode()},\n{traceback.format_exc()}"[
-                                    :500
+                                :500
                                 ]
                                 + "\n..."
                             )
