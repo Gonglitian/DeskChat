@@ -1,0 +1,31 @@
+{
+    "Update": {
+        "CheckUpdateAtStartUp": true
+    },
+    "DesktopLyric": {
+        "Alignment": "Center",
+        "FontFamily": "Microsoft Sans Serif",
+        "FontSize": 50,
+        "HighlightColor": "#9974bc",
+        "StrokeColor": "#000000",
+        "StrokeSize": 10
+    },
+    "Folders": {
+        "Download": "E:/2023Spring/PyQt-Fluent-Widgets-master/examples/settings/config",
+        "LocalMusic": []
+    },
+    "MainWindow": {
+        "DpiScale": 1.25,
+        "EnableAcrylicBackground": false,
+        "Language": "zh",
+        "MinimizeToTray": true,
+        "PlayBarColor": "#225c7f",
+        "RecentPlayNumbers": 300,
+        "ThemeMode": "Dark"
+    },
+    "Online": {
+        "MvQuality": "Full HD",
+        "PageSize": 20,
+        "SongQuality": "Standard quality"
+    }
+}
