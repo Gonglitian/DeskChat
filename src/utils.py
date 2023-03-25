@@ -38,6 +38,17 @@ def count_token(Sentence):
     return length
 
 
+def preprocess(text):
+    # text.replace("","")
+    text.replace(" ", "&nbsp;")
+    text.replace("<", "&lt;")
+    text.replace(">", "&gt;")
+    text.replace("&", "&amp;")
+    text.replace(":", "&quot;")
+    text.replace("'", "&apos;")
+    return text
+
+
 def parse_text(text):
     in_code_block = False
     new_lines = []
@@ -59,6 +70,7 @@ def markdown_to_html_with_syntax_highlight(md_str):
     def replacer(match):
         lang = match.group(1) or "text"
         code = match.group(2)
+
         try:
             lexer = get_lexer_by_name(lang, stripall=True)
         except ValueError:
@@ -124,6 +136,7 @@ def convert_mdtext(md_text):
     return result
 
 
+
 def detect_language(code):
     if code.startswith("\n"):
         first_line = ""
@@ -132,6 +145,7 @@ def detect_language(code):
     language = first_line.lower() if first_line else ""
     code_without_language = code[len(first_line):].lstrip() if first_line else code
     return language, code_without_language
+
 
 
 def processTime(current_time):

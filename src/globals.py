@@ -25,6 +25,18 @@ user_dir = "./user/"
 with open("./state/mycss.css", "r", encoding="utf-8") as f:
     mycss = f.read()
 
+html_head = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <style>{mycss}</style>
+</head>
+<body>
+<div id = "chat-page" class="chat-wrap">
+"""
+
 initialHtml = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -34,6 +46,8 @@ initialHtml = f"""
     <style>{mycss}</style>
 </head>
 <body>
-<div id = "chat-page" class="chat-wrap"></div>
+<div id = "chat-page" class="chat-wrap">
+
+</div>
 </body>
 </html>"""

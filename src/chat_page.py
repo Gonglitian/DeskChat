@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 
 import copy
+import html
 
 import pickle
 
@@ -199,26 +200,29 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
     def updateChat(self):
         tokens = 0
         myChat.is_saved = False
-        html = ''''''
+        myhtml = ''''''
+        marked_content = ''''''
         for sentence in myChat:
             tokens += count_token(sentence)
+            # marked_content = preprocess(sentence.content)
+            # marked_content = html.escape(sentence.content).replace(" ", "&nbsp;").replace("\n", "<br>")
+            # marked_content.replace("\n", "<br>")
+            # marked_content = html.escape(marked_content).replace(" ", "&nbsp;").replace("\n", "<br>")
+
             marked_content = parse_text(sentence.content)
-            marked_content = markdown_to_html_with_syntax_highlight(marked_content)
-            html += f'<div class="{sentence.role}-bubble">{marked_content}</div>'
+            marked_content = convert_mdtext(marked_content)
+            myhtml += f'<div class="{sentence.role}-bubble">{marked_content}</div>'
             self.div_nums += 1
 
         self.token.setText(f"当前Tokens:{tokens}")
-        print(html)
-        html.replace("", "")
-        html.replace("", "")
-        html.replace("", "")
-        html.replace("", "")
-        html.replace("", "")
-        html.replace("", "")
-        html.replace("", "")
-        html.replace("", "")
-
-        self.bot_html.page().runJavaScript(f"""document.getElementById('chat-page').innerHTML = '{html}';""")
+        print(myhtml)
+        self.bot_html.page().setHtml(html_head + myhtml)
+        # for test
+        # myhtml = myhtml.replace("'", "\'")
+        # myhtml = myhtml.replace('"', '\"')
+        # self.bot_html.page().runJavaScript(f"""
+        # document.getElementById('chat-page').innerHTML = '{myhtml}';
+        # """)
 
     def saveChat(self):
         if len(myChat.title.split(" ")) > 5:
@@ -245,6 +249,7 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
             file_name = QFileDialog.getSaveFileName(self, 'Save file', user_dir, filter="Pickle file (*.pickle)")
             if file_name[0]:
                 myChat.title = file_name[0]
+                # TODO 修复这里myChat.title不正确的问题
                 log(myChat.title)
             self.saveChat()
 
