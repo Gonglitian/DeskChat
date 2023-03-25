@@ -29,12 +29,13 @@ class Ui_chat_page_ui(object):
         self.ping.setAlignment(QtCore.Qt.AlignCenter)
         self.ping.setObjectName("ping")
         self.horizontalLayout_2.addWidget(self.ping)
-        self.pushButton_2 = QtWidgets.QPushButton(self.frame)
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.horizontalLayout_2.addWidget(self.pushButton_2)
-        self.pushButton_3 = QtWidgets.QPushButton(self.frame)
-        self.pushButton_3.setObjectName("pushButton_3")
-        self.horizontalLayout_2.addWidget(self.pushButton_3)
+        self.token = QtWidgets.QLabel(self.frame)
+        self.token.setAlignment(QtCore.Qt.AlignCenter)
+        self.token.setObjectName("token")
+        self.horizontalLayout_2.addWidget(self.token)
+        self.sys_comboBox = ComboBox(self.frame)
+        self.sys_comboBox.setObjectName("sys_comboBox")
+        self.horizontalLayout_2.addWidget(self.sys_comboBox)
         self.comboBox = ComboBox(self.frame)
         self.comboBox.setObjectName("comboBox")
         self.horizontalLayout_2.addWidget(self.comboBox)
@@ -139,7 +140,6 @@ class Ui_chat_page_ui(object):
         _translate = QtCore.QCoreApplication.translate
         chat_page_ui.setWindowTitle(_translate("chat_page_ui", "Form"))
         self.ping.setText(_translate("chat_page_ui", "延迟：0ms"))
-        self.pushButton_2.setText(_translate("chat_page_ui", "PushButton"))
-        self.pushButton_3.setText(_translate("chat_page_ui", "PushButton"))
+        self.token.setText(_translate("chat_page_ui", "当前Tokens：0"))
 from PyQt5 import QtWebEngineWidgets
 from qfluentwidgets import ComboBox

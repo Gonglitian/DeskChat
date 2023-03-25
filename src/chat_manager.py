@@ -1,16 +1,22 @@
+from PyQt5.QtCore import *
+
+import copy
+
+
 class Sentence:
     def __init__(self, role: str = "", content: str = "") -> None:
         self.role = role
         self.content = content
 
 
-class ChatManager:
+class ChatManager():
     def __init__(self, title: str = "New Chat") -> None:
         self.title = title
         self.context = []
         self.contextFormat = []
         self.html = ""
         self.is_saved = False
+
     def __len__(self):
         return len(self.context)
 
@@ -36,7 +42,9 @@ class ChatManager:
         self.contextFormat.append({"role": sentence.role, "content": sentence.content})
 
     def pop(self, index=-1):
-        self.contextFormat.pop(index)
+        if len(self) == 0:
+            return 0
+            self.contextFormat.pop(index)
         return self.context.pop(index)
 
     def generateHtml(self):
@@ -49,6 +57,12 @@ class ChatManager:
     def clear(self):
         self.context.clear()
         self.contextFormat.clear()
+
+    def setValue(self, chat):
+        self.clear()
+        self.title = chat.title
+        for x in chat:
+            self.append(x)
 
     def __repr__(self) -> str:
         return "\n".join([sentence.content for sentence in self.context])

@@ -1,22 +1,12 @@
 import os
+import time
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5 import QtGui
 
-from src.utils import *
-from src.globals import *
-from src.request_thread import RequestTask
-from src.chat_manager import *
-
-zipimporter_fix()
 import copy
-import mdtex2html
-import markdown
+
 import pickle
-from qfluentwidgets import FluentIcon as FIF
-from qframelesswindow import FramelessWindow, StandardTitleBar
 
 from qfluentwidgets import (
     MessageDialog,
@@ -29,6 +19,12 @@ from qfluentwidgets import (
 )
 from src.chat_page_ui import Ui_chat_page_ui
 from src.utils import *
+from src.globals import *
+
+from src.request_thread import RequestTask
+from src.chat_manager import *
+
+import datetime
 
 
 class chatPage(QFrame, Ui_chat_page_ui, QWidget):
@@ -37,39 +33,38 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
         # 初始化界面
         self.setupUi(self)
         setTheme(Theme.DARK)
-        #
-        self.setButtonIcon(self.send_btn, "send.png")
-        self.setButtonIcon(self.menu_btn, "application-menu.png")
-        self.bindMenuActions()
-        self.comboBox.setCurrentIndex(0)
-        self.comboBox.currentIndexChanged.connect(self.showChat)
-        self.user_text.setContextMenuPolicy(Qt.NoContextMenu)
         with open("resource/demo.qss", encoding="utf-8") as f:
             self.setStyleSheet(f.read())
-        # self.show()
-        ###################
         #
         self.stateTooltip = None
+        self.isRunning = False
         #
         self.requestThreadList = []
         self.loadedHistory = []
         #
         self.currentComboBoxIdex = 0
-        #
-        self.isRunning = False
-        #
-        self.initQTextBrowser()
-        self.loadHistory()
-        # 绑定按钮逻辑.toPlainText
+        self.div_nums = 0
+
+        # 绑定按钮逻辑
         self.send_btn.setEnabled(False)
         self.send_btn.clicked.connect(self.getAnwser)
-        shortcut = QShortcut(QKeySequence("Enter"), self)
-        shortcut.activated.connect(self.send_btn.click)
         # self.shut_btn.clicked.connect(self.shutRequestTask)
 
         # 其它组件逻辑
+        self.setButtonIcon(self.send_btn, icon_dir + "send.png")
+        self.setButtonIcon(self.menu_btn, icon_dir + "application-menu.png")
+        self.bindMenuActions()
+        self.comboBox.setCurrentIndex(0)
+        self.comboBox.currentIndexChanged.connect(self.showChat)
+        self.user_text.setContextMenuPolicy(Qt.NoContextMenu)
         self.user_text.textChanged.connect(self.dealNoInput)
         self.user_text.setLineWrapMode(QTextEdit.NoWrap)
+
+        #
+        self.bot_html.setHtml(initialHtml)
+        self.initQTextBrowser()
+        self.loadHistory()
+        self.newChat()
 
     def showMenu(self):
         # 显示menu
@@ -124,13 +119,13 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
         m = len(myChat)
         # w = MessageDialog(title, content, self)
         w = MessageBox("Delete Item", "Are you sure to delete last Chat?", self)
-        if w.exec() and m >= 2:
+        if w.exec():
             if m % 2 == 0:
                 myChat.pop()
                 myChat.pop()
             else:
                 myChat.pop()
-        self.render()
+        self.updateChat()
 
     def finishRequestTask(self):
         self.isRunning = False
@@ -144,7 +139,7 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
     def getSummary(self, forTitle: bool):
         if forTitle:
             if len(myChat) > 2:
-                invalid_chars = '\\/:*?"<>.|'
+                invalid_chars = '\\/:*?"<>.|，。、'
                 myChat.title = myChat.title.replace("\n", "")
                 for char in invalid_chars:
                     myChat.title = myChat.title.replace(char, "")
@@ -160,32 +155,37 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
         # self.bot_html.document().setDefaultStyleSheet(mycss)
         ...
 
-    def insertHtml(self, content):
-        pass
+    def keyPressEvent(self, event):
+        if event.key() == 16777220:  # 回车键的键码值
+            self.send_btn.click()
 
-    def loadHistory(self, folderPath: str = "./user"):  # list[0] = ["user","hello!"]
+    def loadHistory(self):
         if "user" not in os.listdir("./"):
-            os.mkdir("./user")
+            os.mkdir(user_dir)
         self.loadedHistory.clear()
-        file_names = [f for f in os.listdir(folderPath) if f.endswith("pickle")]
+        file_names = [f for f in os.listdir(user_dir) if f.endswith("pickle")]
         for file_name in file_names:
-            file_path = os.path.join(folderPath, file_name)
+            file_path = os.path.join(user_dir, file_name)
             with open(file_path, "rb") as f:
                 data = pickle.load(f)
                 self.loadedHistory.append(data)
+
         self.comboBox.items.clear()
         self.comboBox.addItems([name.replace(".pickle", "") for name in file_names])
 
     def newChat(self):
-        if not myChat.is_saved:
+        if len(myChat) > 0 and not myChat.is_saved:
             w = MessageBox("Unsaved Chat", "Are you sure to swich to another Chat leaving this unsaved?", self)
             user_choice = w.exec()
-            if user_choice == 1:
-                pass
-            else:
-                self.saveChat()
-        myChat.clear()
-        self.render()
+            if user_choice:
+                myChat.clear()
+                myChat.title = ("New Chat " + processTime(datetime.datetime.now()))
+
+                self.loadedHistory.append(myChat)
+                self.comboBox.addItem(myChat.title)
+                chat_index = self.comboBox.items.index(myChat.title)
+                self.comboBox.setCurrentIndex(chat_index)
+                self.showChat(chat_index)
 
     def regenLastChat(self):
         if not self.isRunning:
@@ -194,47 +194,62 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
                 lastUserSentence = myChat.pop().content
                 self.startRequestTask(lastUserSentence, False)
 
-    def render(self):
-        myChat.is_saved = False
-        self.bot_html.setHtml("")  # TODO
-        html = ""
-        for sentence in myChat:
-            content = parse_text(sentence.content)
-            markedContent = mdtex2html.convert(content, extensions=['fenced_code','codehilite','tables'])
-            html += f'<div class="{sentence.role}"><div>{markedContent}</div></div>'
+    # test input:find index of an item in python list
 
-        # self.tokensNum.setNum(calcTokens(content))
-        html_composed = html_head + html + html_tail
-        # print(html_composed)
-        self.bot_html.setHtml(html_composed)
-        self.bot_html.loadFinished.connect(lambda: self.bot_html.page().runJavaScript(
-            "window.scrollTo(0, document.body.scrollHeight);"
-        ))
+    def updateChat(self):
+        tokens = 0
+        myChat.is_saved = False
+        html = ''''''
+        for sentence in myChat:
+            tokens += count_token(sentence)
+            marked_content = parse_text(sentence.content)
+            marked_content = markdown_to_html_with_syntax_highlight(marked_content)
+            html += f'<div class="{sentence.role}-bubble">{marked_content}</div>'
+            self.div_nums += 1
+
+        self.token.setText(f"当前Tokens:{tokens}")
+        print(html)
+        html.replace("", "")
+        html.replace("", "")
+        html.replace("", "")
+        html.replace("", "")
+        html.replace("", "")
+        html.replace("", "")
+        html.replace("", "")
+        html.replace("", "")
+
+        self.bot_html.page().runJavaScript(f"""document.getElementById('chat-page').innerHTML = '{html}';""")
 
     def saveChat(self):
-        count = 0
+        if len(myChat.title.split(" ")) > 5:
+            file_name = " ".join(myChat.title.split(" ")[:5])
+        else:
+            file_name = myChat.title
+        if (file_name + ".pickle") not in os.listdir(user_dir):
+            with open(os.path.join(user_dir, file_name + ".pickle"), 'wb') as f:
+                f.write(pickle.dumps(myChat))
+        else:
+            with open(os.path.join(user_dir, file_name, str(time.time())[:5], ".pickle"), 'wb') as f:
+                f.write(pickle.dumps(myChat))
         myChat.is_saved = True
-        while (True):
-            try:
-                if count == 0:
-                    with open(f"./user/{myChat.title}.pickle", "wb") as f:
-                        pickle.dump(myChat, f)
-                    break
-                else:
-                    with open(f"./user/{myChat.title}_{count}.pickle", "wb") as f:
-                        pickle.dump(myChat, f)
-                    break
-            except Exception as e:
-                # self.showErrorMessage("有重复文件名")
-                count += 1
-        self.render()
         self.loadHistory()
+        self.comboBox.setCurrentIndex(self.comboBox.items.index(myChat.title))
+        self.showChat(self.comboBox.items.index(myChat.title))
 
     def saveHistory(self):
-        self.startRequestTask(summaryTitleString, True)
+        if AUTORENAME:
+            self.startRequestTask(summaryTitleString, True)
+        else:
+            options = QFileDialog.Options()
+            options |= QFileDialog.DontUseNativeDialog
+            file_name = QFileDialog.getSaveFileName(self, 'Save file', user_dir, filter="Pickle file (*.pickle)")
+            if file_name[0]:
+                myChat.title = file_name[0]
+                log(myChat.title)
+            self.saveChat()
 
-    def setButtonIcon(self, button, icon_name):
-        image = QPixmap(icon_dir + icon_name)
+    def setButtonIcon(self, button, icon_path):
+        image = QPixmap(icon_path)
         icon = QIcon(image)
         icon_size = QSize(30, 30)
         button.setText("")
@@ -244,14 +259,8 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
         button.setContentsMargins(3, 3, 3, 3)
 
     def showChat(self, index):
-        myChat.clear()
-        # print("cleared,now id is :", id(myChat))
-        # print(index)
-        loadChat = copy.copy(self.loadedHistory[index])
-        for sentence in loadChat:
-            myChat.append(Sentence(sentence.role, sentence.content))
-        # print("content is :\n", myChat)
-        self.render()
+        myChat.setValue(self.loadedHistory[index])
+        self.updateChat()
 
     def showErrorMessage(self, error: str):
         w = MessageBox("Error", error, self)
@@ -263,7 +272,7 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
             thread.finishSignal.emit()
             thread.runPermission = False
             del thread
-        self.shut_btn.setEnabled(False)
+        # self.shut_btn.setEnabled(False)
 
     def startRequestTask(self, content: str, summaryFlag: bool):
         if not self.isRunning:
@@ -276,19 +285,16 @@ class chatPage(QFrame, Ui_chat_page_ui, QWidget):
             # 使线程不会在startRequestTask函数结束时被回收内存
             self.requestThreadList.append(requestTask)
             # 绑定线程信号
-            requestTask.renderSignal.connect(self.render)
             requestTask.finishSignal.connect(self.finishRequestTask)
             requestTask.stateUpdateSignal.connect(self.updateStatus)
             requestTask.errorSignal.connect(self.showErrorMessage)
             requestTask.summaryFinishSignal.connect(self.getSummary)
             requestTask.informationUpdateSignal.connect(self.dealTaskInformation)
+            requestTask.updateChatSignal.connect(self.updateChat)
             requestTask.start()
 
     def summaryChat(self):
         self.startRequestTask(summaryString, False)
-
-    def updateDelay(self, delay: int):
-        self.pingNum.setNum(delay)
 
     def updateStatus(self, message: str, done: bool):
         if not done:

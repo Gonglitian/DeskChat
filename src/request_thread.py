@@ -10,12 +10,12 @@ from src.globals import *
 
 
 class RequestTask(QThread):
-    renderSignal = pyqtSignal()
-    finishSignal = pyqtSignal()
-    stateUpdateSignal = pyqtSignal(str, bool)
     errorSignal = pyqtSignal(str)
-    summaryFinishSignal = pyqtSignal(bool)
+    finishSignal = pyqtSignal()
     informationUpdateSignal = pyqtSignal(list)
+    stateUpdateSignal = pyqtSignal(str, bool)
+    summaryFinishSignal = pyqtSignal(bool)
+    updateChatSignal = pyqtSignal()
 
     def __init__(self, inputSentence: str, summaryFlag: bool):
         super(RequestTask, self).__init__()
@@ -26,8 +26,7 @@ class RequestTask(QThread):
 
     def run(self):
         myChat.append(Sentence(USER, self.inputSentence))
-
-        self.renderSignal.emit()
+        self.updateChatSignal.emit()
         payload = {
             "model": "gpt-3.5-turbo",
             "messages": myChat.contextFormat,  # [{"role": "user", "content": f"{inputs}"}],
@@ -43,7 +42,7 @@ class RequestTask(QThread):
                 self.stateUpdateSignal.emit("正在连接...", False)
                 startTime = time.time()
                 response = session.post(
-                    API_URL, headers=headers, json=payload, stream=True, timeout=10
+                    API_URL, headers=headers, json=payload, stream=True, timeout=20
                 )
                 endTime = time.time()
 
@@ -53,7 +52,7 @@ class RequestTask(QThread):
                 content = ""
                 # 新增空元素，准备接受流式传输内容
                 myChat.append(Sentence(ASSISTANT, content))
-
+                self.updateChatSignal.emit()
                 # 开始获取流式传输内容
                 for chunk in response.iter_lines():
                     self.stateUpdateSignal.emit("回答生成中", False)
@@ -77,8 +76,7 @@ class RequestTask(QThread):
                         # status_text = f"id: {data['id']}, finish_reason: {data['choices'][0]['finish_reason']}"
                         partialWords = delta["content"] if "content" in delta else ""
                         myChat.appendPartialWords(partialWords)
-
-                        self.renderSignal.emit()
+                        self.updateChatSignal.emit()
 
             except Exception as e:
                 self.errorSignal.emit(traceback.format_exc()[:500] + "\n...")
@@ -89,5 +87,5 @@ class RequestTask(QThread):
                 myChat.title = myChat[-1].content
                 self.summaryFinishSignal.emit(True)
         self.stateUpdateSignal.emit("生成完毕", True)
-
+        self.updateChatSignal.emit()
         self.finishSignal.emit()

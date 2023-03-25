@@ -205,7 +205,7 @@ class DemoMain(QMainWindow, Ui_MainWindow):
             # 使线程不会在startRequestTask函数结束时回收内存
             self.requestThreadList.append(requestTask)
             # 绑定线程信号
-            requestTask.renderSignal.connect(self.render)
+            requestTask.updateDivSignal.connect(self.render)
             requestTask.finishSignal.connect(self.finishRequestTask)
             requestTask.stateUpdateSignal.connect(self.updateStatus)
             requestTask.errorSignal.connect(self.showErrorMessage)
