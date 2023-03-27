@@ -1,0 +1,3 @@
+document.getElementById('chat-page').innerHTML = '<div class="user-bubble"><p>i&#39;m :</p><pre><code class="python"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+</pre></div>
+</code></pre></div><div class="assistant-bubble"><p>Output:<br>``</p></div>';

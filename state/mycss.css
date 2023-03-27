@@ -21,7 +21,6 @@
     width: max-content;
 
     align-self: flex-end;
-
 }
 
 .assistant-bubble {
@@ -83,7 +82,7 @@ code {
 /* 代码块 */
 pre code {
     display: block;
-    overflow: auto;
+    overflow-y: auto;
     white-space: pre;
     background-color: hsla(0, 0%, 0%, 80%) !important;
     border-radius: 10px;

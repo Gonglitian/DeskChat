@@ -21,6 +21,7 @@ from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 import re
 import inspect
+from markupsafe import Markup, escape
 
 LOGFLAG = True
 
@@ -38,14 +39,13 @@ def count_token(Sentence):
     return length
 
 
-def preprocess(text):
+def later_process(text):
     # text.replace("","")
-    text.replace(" ", "&nbsp;")
-    text.replace("<", "&lt;")
-    text.replace(">", "&gt;")
-    text.replace("&", "&amp;")
-    text.replace(":", "&quot;")
-    text.replace("'", "&apos;")
+    # text = text.replace(" ", "&nbsp;")
+    # text = text.replace("<", "&lt;")
+    # text = text.replace(">", "&gt;")
+    text = text.replace(":", "&quot;")
+    text = text.replace("'", "&apos;")
     return text
 
 
@@ -79,7 +79,7 @@ def markdown_to_html_with_syntax_highlight(md_str):
         formatter = HtmlFormatter()
         highlighted_code = highlight(code, lexer, formatter)
 
-        return f'<pre><code class="{lang}">{highlighted_code}</code></pre>'
+        return Markup(f'<pre><code class="{lang}">{highlighted_code}</code></pre>')
 
     code_block_pattern = r"```(\w+)?\n([\s\S]+?)\n```"
     md_str = re.sub(code_block_pattern, replacer, md_str, flags=re.MULTILINE)
@@ -121,6 +121,7 @@ def convert_mdtext(md_text):
     result = []
     for non_code, code in zip(non_code_parts, code_blocks + [""]):
         if non_code.strip():
+            non_code = escape(non_code)
             non_code = normalize_markdown(non_code)
             if inline_code_pattern.search(non_code):
                 result.append(markdown(non_code, extensions=["tables"]))
@@ -136,7 +137,6 @@ def convert_mdtext(md_text):
     return result
 
 
-
 def detect_language(code):
     if code.startswith("\n"):
         first_line = ""
@@ -147,8 +147,12 @@ def detect_language(code):
     return language, code_without_language
 
 
-
 def processTime(current_time):
     # print(str(current_time))
     current_time = str(current_time)[6:19].replace(":", "_").replace("-", "_").replace(" ", "_")
     return current_time
+
+
+def get_file_name(path):
+    result = re.findall(r'user/(.*?).pickle', path)
+    return result[0]
